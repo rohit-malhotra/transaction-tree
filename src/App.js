@@ -3,7 +3,10 @@ import './App.css';
 import { Demo } from './graph'
 const data = {
   "service_name": "growth_service",
-  "request": {},
+  "request": {
+    "f":"f",
+    "ads":"adas"
+  },
   "response": {},
   "childs": [{
     "service_name": "customer-pre-request-service",

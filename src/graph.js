@@ -1,4 +1,5 @@
 import { EuiTreeView, EuiToken, EuiIcon } from '@elastic/eui';
+import ReactJson from 'searchable-react-json-view'
 import '@elastic/eui/dist/eui_theme_dark.css';
 import React, { useState, useEffect } from 'react';
 import _ from 'lodash'
@@ -12,7 +13,7 @@ const Demo = (props) => {
   const [showModal, setShowModal] = useState({});
   useEffect(() => {
     // GET request using fetch inside useEffect React hook
-    fetch('http://bbf3-122-177-108-46.ngrok.io/transactionLogs/getLogsByTransactionId?transactionId=e5cc8aef1c0672f47f03edcfcf31b594')
+    fetch('http://localhost:8000/transactionLogs/getLogsByTransactionId?transactionId=14f78800deaf70a2ec95ee3d77c0a862')
       .then(response => {
         return response.json()
       })
@@ -33,7 +34,9 @@ const Demo = (props) => {
       <Modal data={showModal} show={!_.isEmpty(showModal)} handleClose={() => {
         setShowModal({})
       }}>
-        <p style={{ alignSelf: 'center' }}>{JSON.stringify(showModal, null, 2)}</p>
+      <ReactJson src={showModal} theme={'monokai'} collapsed={1} name={false} sortKeys={true}
+                 collapseStringsAfterLength={100}
+                 style={{height: '500px', textAlign: 'left', overflow: 'auto'}}/>
       </Modal>
     </div>
   );

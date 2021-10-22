@@ -1,10 +1,10 @@
 import { EuiTreeView, EuiToken, EuiIcon } from '@elastic/eui';
-import ReactJson from 'searchable-react-json-view'
 import '@elastic/eui/dist/eui_theme_dark.css';
 import React, { useState, useEffect } from 'react';
 import _ from 'lodash'
 import { Modal } from './modal/modal';
 import {createGraph} from './modal/graphBuild'
+import ReactJson from 'react-json-view'
 
 
 
@@ -13,65 +13,83 @@ const Demo = (props) => {
   const [showModal, setShowModal] = useState({});
   useEffect(() => {
     // GET request using fetch inside useEffect React hook
-    fetch('http://localhost:8000/transactionLogs/getLogsByTransactionId?transactionId=14f78800deaf70a2ec95ee3d77c0a862')
+    fetch('http://localhost:8000/transactionLogs/getLogsByUserName?userName=himanshu')
       .then(response => {
         return response.json()
       })
       .then(data => {
         console.log('API response:-1', data);
-       const Filterdata = _.filter(data, node => !_.isEmpty(node['nodeId']))
-        console.log('API response:', Filterdata);
-        console.log("response.json()", JSON.stringify(createGraph(Filterdata)))
-        setData(createGraph(Filterdata));
+        let filterData = _.filter(data, node => !_.isEmpty(node['nodeId']))
+        filterData = _.groupBy(filterData,'transactionId')
+        console.log('API response:', filterData);
+        filterData = _.map(filterData, (value, key) => {
+          return createGraph(value)
+        })
+        console.log('API response:', filterData);
+        setData(filterData);
       });
 
     // empty dependency array means this effect will only run once (like componentDidMount in classes)
   }, []);
-  console.log("modalData", JSON.stringify(showModal))
+ 
   return (
     <div>
-      <EuiTreeView items={[getData(data)]} aria-label="Sample Folder Tree" />
+      <EuiTreeView items={[getTopLevelView(data)]} aria-label="Sample Folder Tree" />
       <Modal data={showModal} show={!_.isEmpty(showModal)} handleClose={() => {
         setShowModal({})
       }}>
-      <ReactJson src={showModal} theme={'monokai'} collapsed={1} name={false} sortKeys={true}
+        <ReactJson src={showModal} theme={'monokai'} collapsed={1} name={false} sortKeys={true}
                  collapseStringsAfterLength={100}
                  style={{height: '500px', textAlign: 'left', overflow: 'auto'}}/>
       </Modal>
     </div>
   );
+  
 
-  function getChildData(data) {
-    return _.map(data, child => {
-      return getData(child)
+  function getChildData(data,label_id) {
+    return _.map(data, (child,key) => {
+      return getData(child,label_id+key)
     })
   }
 
-  function getData(data) {
+  function getTopLevelView(data) {
     if (!data) {
       return {};
     }
-
     return {
-      label: data['service_name']+"."+data['apiName'].replaceAll('/','.'),
-      id: data['nodeId'] + data['method_name'],
+      label: "api_path",
+      id: "root",
       icon: <EuiIcon type="folderClosed" />,
       iconWhenExpanded: <EuiIcon type="folderOpen" />,
-      children: _.compact([getRequestChild(data), getResponseChild(data), getChildApis(data)])
+      children: _.map(data, (child,key) => getData(child, key))
     }
   }
 
-  function getChildApis(data) {
+  function getData(data, label_id) {
+    if (!data) {
+      return {};
+    }
+    const tempLabel = data['service_name'] + "." + data['apiName'].replaceAll('/', '.')
+    return {
+      label: tempLabel,
+      id: tempLabel+label_id,
+      icon: <EuiIcon type="folderClosed" />,
+      iconWhenExpanded: <EuiIcon type="folderOpen" />,
+      children: _.compact([getRequestChild(data), getResponseChild(data), getChildApis(data,label_id)])
+    }
+  }
+
+  function getChildApis(data, label_id) {
     const childList = getChildData(data['childs'])
-    if(_.isEmpty(childList)){
+    if (_.isEmpty(childList)) {
       return null
     }
     return {
-      label: "Apis",
-      id: data['nodeId'] + data['apiName'] + "childApis",
+      label: "ApiCalls",
+      id: data['service_name']+data['nodeId'] + data['apiName'] + "childApis"+label_id,
       icon: <EuiIcon type="folderClosed" />,
       iconWhenExpanded: <EuiIcon type="folderOpen" />,
-      children: getChildData(data['childs'])
+      children: getChildData(data['childs'],label_id)
     }
   }
 

@@ -66,7 +66,9 @@ const addChildNodesforEachNode = function (dummyarray) {
         if (!_.isEmpty(parentId)) {
             const parentNode = idToNodeMap[parentId];
             const childNode = idToNodeMap[nodeId];
-            parentNode.childs.push(childNode);
+            if (!_.isEmpty(parentNode)) {
+                parentNode.childs.push(childNode);
+            }
         }
     });
 }

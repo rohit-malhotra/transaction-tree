@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import _ from 'lodash'
 import { Modal } from './modal/modal';
 import {createGraph} from './modal/graphBuild'
-import ReactJson from 'react-json-view'
+import ReactJson from 'searchable-react-json-view'
 
 
 
@@ -31,16 +31,43 @@ const Demo = (props) => {
 
     // empty dependency array means this effect will only run once (like componentDidMount in classes)
   }, []);
- 
+
+  const [search, setSearch] = React.useState('')
   return (
     <div>
       <EuiTreeView items={[getTopLevelView(data)]} aria-label="Sample Folder Tree" />
       <Modal data={showModal} show={!_.isEmpty(showModal)} handleClose={() => {
         setShowModal({})
       }}>
-        <ReactJson src={showModal} theme={'monokai'} collapsed={1} name={false} sortKeys={true}
-                 collapseStringsAfterLength={100}
-                 style={{height: '500px', textAlign: 'left', overflow: 'auto'}}/>
+        <div style={{textAlign: 'left'}}>
+          <div style={{paddingLeft: '10px', paddingTop: '10px', paddingBottom: '10px', backgroundColor: '#272822', color: "white"}}>
+            Search: <input 
+              value={search} 
+              onChange={e => {
+                setSearch(e.target.value)
+              }}
+              style={{
+                paddingLeft: '5px', 
+                paddingTop: '5px', 
+                paddingBottom: '5px', 
+                paddingRight: '5px', 
+                width: '500px',
+                backgroundColor: '#272822',
+                color: "white"
+              }} 
+            />
+          </div>
+          <ReactJson 
+            src={showModal} 
+            theme={'monokai'} 
+            collapsed={1} 
+            name={false} 
+            sortKeys={true}
+            collapseStringsAfterLength={100}
+            style={{height: '500px', textAlign: 'left', overflow: 'auto', paddingTop: '5px'}}
+            highlightSearch={search.length > 3 ? search : ''}
+          />
+        </div>
       </Modal>
     </div>
   );

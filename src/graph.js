@@ -3,7 +3,7 @@ import '@elastic/eui/dist/eui_theme_dark.css';
 import React, { useState, useEffect } from 'react';
 import _ from 'lodash'
 import { Modal } from './modal/modal';
-import {createGraph} from './modal/graphBuild'
+import { createGraph } from './modal/graphBuild'
 import ReactJson from 'searchable-react-json-view'
 
 
@@ -11,9 +11,13 @@ import ReactJson from 'searchable-react-json-view'
 const Demo = (props) => {
   const [data, setData] = useState(null);
   const [showModal, setShowModal] = useState({});
-  useEffect(() => {
+  const [username, setUsername] = useState(null);
+  const [transactionId, setTractionId] = useState(null);
+  const [search, setSearch] = React.useState('');
+  
+  const getDataFromApi = (api) => {
     // GET request using fetch inside useEffect React hook
-    fetch('http://localhost:8000/transactionLogs/getLogsByUserName?userName=himanshu')
+    fetch(api)
       .then(response => {
         return response.json()
       })
@@ -30,38 +34,79 @@ const Demo = (props) => {
       });
 
     // empty dependency array means this effect will only run once (like componentDidMount in classes)
-  }, []);
+  }
 
-  const [search, setSearch] = React.useState('')
+  const getDataByUserName = () => {
+    getDataFromApi('http://localhost:8000/transactionLogs/getLogsByUserName?userName='+username);
+  }
+  
+  const getDataByTransactionId = () => {
+    getDataFromApi('http://localhost:8000/transactionLogs/getLogsByTransactionId?transactionId='+transactionId);
+  }
+  
+  function getLogs() {
+    if (!!transactionId) {
+      getDataByTransactionId();
+    } else if (!!username) {
+      getDataByUserName()
+    }
+  }
+
+  useEffect(getLogs, []);
+
+  function onSubmit(event){
+    getLogs();
+    event.preventDefault();
+  }
+
+  function handleChange(setter) {
+    return (event) => {
+      setter(event.target.value) 
+    }
+  }
+
   return (
     <div>
+      <div>
+        <form onSubmit = {onSubmit}>
+          <label>
+            Username:
+            <input type="text" onChange={handleChange(setUsername)} />
+          </label>
+          <label>
+            Transaction id:
+            <input type="text" onChange={handleChange(setTractionId)} />
+          </label>
+          <input type="submit" value="Submit"  />
+        </form>
+      </div>
       <EuiTreeView items={[getTopLevelView(data)]} aria-label="Sample Folder Tree" />
       <Modal data={showModal} show={!_.isEmpty(showModal)} handleClose={() => {
         setShowModal({})
       }}>
         <div style={{textAlign: 'left'}}>
           <div style={{paddingLeft: '10px', paddingTop: '10px', paddingBottom: '10px', backgroundColor: '#272822', color: "white"}}>
-            Search: <input 
-              value={search} 
-              onChange={e => {
-                setSearch(e.target.value)
-              }}
-              style={{
-                paddingLeft: '5px', 
-                paddingTop: '5px', 
-                paddingBottom: '5px', 
-                paddingRight: '5px', 
-                width: '500px',
-                backgroundColor: '#272822',
-                color: "white"
-              }} 
-            />
+            Search: <input
+            value={search}
+            onChange={e => {
+              setSearch(e.target.value)
+            }}
+            style={{
+              paddingLeft: '5px',
+              paddingTop: '5px',
+              paddingBottom: '5px',
+              paddingRight: '5px',
+              width: '500px',
+              backgroundColor: '#272822',
+              color: "white"
+            }}
+          />
           </div>
-          <ReactJson 
-            src={showModal} 
-            theme={'monokai'} 
-            collapsed={1} 
-            name={false} 
+          <ReactJson
+            src={showModal}
+            theme={'monokai'}
+            collapsed={1}
+            name={false}
             sortKeys={true}
             collapseStringsAfterLength={100}
             style={{height: '500px', textAlign: 'left', overflow: 'auto', paddingTop: '5px'}}
@@ -71,7 +116,6 @@ const Demo = (props) => {
       </Modal>
     </div>
   );
-  
 
   function getChildData(data,label_id) {
     return _.map(data, (child,key) => {
